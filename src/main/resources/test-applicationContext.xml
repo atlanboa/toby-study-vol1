@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <tx:annotation-driven/>
+    <context:annotation-config/>
+
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.SimpleDriverDataSource">
+        <property name="driverClass" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost/testdb?useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC"/>
+        <property name="username" value="spring"/>
+        <property name="password" value="book"/>
+    </bean>
+
+
+
+    <!--  프록시에 DI 돼서 간접으로 사용할 필요없이 userService 로 등록해서 사용  -->
+    <bean id="userService" class="user.service.UserServiceImpl">
+        <property name="userDao" ref="userDao"/>
+        <property name="userLevelUpgradePolicy" ref="userLevelUpgradePolicy"/>
+        <property name="mailSender" ref="mailSender"/>
+    </bean>
+
+    <bean id="userLevelUpgradePolicy" class="user.service.SummerUserLevelUpgradePolicy">
+        <property name="userDao" ref="userDao"/>
+    </bean>
+
+    <bean id="mailSender" class="user.service.DummyMailSender"/>
+
+    <bean id="message" class="factorybean.MessageFactoryBean">
+        <property name="text" value="Factory Bean"/>
+    </bean>
+
+    <!--  static 멤버 클래스는 $를 사용해서 등록한다. parent는 다른 빈 설정 내용 상속받을 수 있음  -->
+    <bean id="testUserService" class="user.service.UserServiceTest$TestUserService" parent="userService"/>
+
+    <!--  sql di  -->
+
+    <bean id="userDao" class="user.dao.UserDaoJdbc">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="sqlService" ref="sqlService"/>
+    </bean>
+
+<!--    <bean id="sqlService" class="user.sqlservice.BaseSqlService">-->
+<!--        <property name="sqlReader" ref="sqlReader"/>-->
+<!--        <property name="sqlRegistry" ref="sqlRegistry"/>-->
+<!--    </bean>-->
+
+    <bean id="sqlService" class="user.sqlservice.DefaultSqlService"/>
+
+    <bean id="sqlReader" class="user.sqlservice.JaxbXmlSqlReader">
+        <property name="sqlmapFile" value="/sqlmap.xml"/>
+    </bean>
+
+    <bean id="sqlRegistry" class="user.sqlservice.HashMapSqlRegistry"/>
+
+
+</beans>
